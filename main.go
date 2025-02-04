@@ -8,6 +8,7 @@ import (
 	hook "github.com/robotn/gohook"
 )
 
+
 var (
 	history       []string
 	lastClipboard string
