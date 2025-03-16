@@ -2,92 +2,94 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
-
+	
 	"github.com/atotto/clipboard"
 	hook "github.com/robotn/gohook"
 )
 
+const (
+	maxHistorySize = 100
+	pollInterval   = 500 * time.Millisecond
+)
 
 var (
-	history       []string
-	lastClipboard string
+	clipboardHistory []string
+	lastClipboard    string
 )
 
 func main() {
-	fmt.Print("program is running")
+	fmt.Println("Clipboard Manager is running...")
+
+	// Handle graceful shutdown
+	stopChan := make(chan os.Signal, 1)
+	signal.Notify(stopChan, syscall.SIGINT, syscall.SIGTERM)
+
 	go monitorClipboard()
-	go add()
-	select {}
+	go registerHotkeys()
+
+	<-stopChan
+	fmt.Println("\nShutting down clipboard manager...")
 }
 
 func monitorClipboard() {
 	for {
 		current, err := clipboard.ReadAll()
-		if err == nil && current != lastClipboard {
-			history = append([]string{current}, history...)
+		if err != nil {
+			fmt.Printf("Error reading clipboard: %v\n", err)
+			continue
+		}
+
+		if current != lastClipboard && current != "" {
+			// Add new entry to beginning of history
+			clipboardHistory = append([]string{current}, clipboardHistory...)
+
+			// Trim history if it exceeds maximum size
+			if len(clipboardHistory) > maxHistorySize {
+				clipboardHistory = clipboardHistory[:maxHistorySize]
+			}
+
 			lastClipboard = current
 		}
-		time.Sleep(500 * time.Millisecond)
+
+		time.Sleep(pollInterval)
 	}
 }
 
-func add() {
-	fmt.Println("--- Please press ctrl + shift + 1-9 multiple times ---")
-	hook.Register(hook.KeyDown, []string{"1", "ctrl", "shift"}, func(e hook.Event) {
-		keyStr := string(e.Rawcode)
-		monitorKeyboard(keyStr)
-	})
+func registerHotkeys() {
+	fmt.Println("--- Press Ctrl+Shift+1-9 to paste from history ---")
 
-	hook.Register(hook.KeyDown, []string{"2", "ctrl", "shift"}, func(e hook.Event) {
-		keyStr := string(e.Rawcode)
-		monitorKeyboard(keyStr)
-	})
-	hook.Register(hook.KeyDown, []string{"3", "ctrl", "shift"}, func(e hook.Event) {
-		keyStr := string(e.Rawcode)
-		monitorKeyboard(keyStr)
-	})
-
-	hook.Register(hook.KeyDown, []string{"4", "ctrl", "shift"}, func(e hook.Event) {
-		keyStr := string(e.Rawcode)
-		monitorKeyboard(keyStr)
-	})
-	hook.Register(hook.KeyDown, []string{"5", "ctrl", "shift"}, func(e hook.Event) {
-		keyStr := string(e.Rawcode)
-		monitorKeyboard(keyStr)
-	})
-	hook.Register(hook.KeyDown, []string{"6", "ctrl", "shift"}, func(e hook.Event) {
-		keyStr := string(e.Rawcode)
-		monitorKeyboard(keyStr)
-	})
-	hook.Register(hook.KeyDown, []string{"7", "ctrl", "shift"}, func(e hook.Event) {
-		keyStr := string(e.Rawcode)
-		monitorKeyboard(keyStr)
-	})
-	hook.Register(hook.KeyDown, []string{"8", "ctrl", "shift"}, func(e hook.Event) {
-		keyStr := string(e.Rawcode)
-		monitorKeyboard(keyStr)
-	})
-	hook.Register(hook.KeyDown, []string{"9", "ctrl", "shift"}, func(e hook.Event) {
-		keyStr := string(e.Rawcode)
-		monitorKeyboard(keyStr)
-	})
+	for i := 1; i <= 9; i++ {
+		key := fmt.Sprintf("%d", i)
+		hook.Register(hook.KeyDown, []string{key, "ctrl", "shift"}, func(e hook.Event) {
+			keyStr := string(e.Rawcode)
+			pasteFromHistory(keyStr)
+		})
+	}
 
 	s := hook.Start()
 	<-hook.Process(s)
 }
 
-func monitorKeyboard(keyStr string) {
-	if len(history) == 0 {
+func pasteFromHistory(keyStr string) {
+	if len(clipboardHistory) == 0 {
+		fmt.Println("Clipboard history is empty")
 		return
 	}
-	fmt.Print(history)
 
-	if keyStr >= "0" && keyStr <= "9" {
+	if keyStr >= "1" && keyStr <= "9" {
 		index := int(keyStr[0] - '1')
-		if index < len(history) {
-			clipboard.WriteAll(history[index])
-			lastClipboard = history[index]
+		if index < len(clipboardHistory) {
+			err := clipboard.WriteAll(clipboardHistory[index])
+			if err != nil {
+				fmt.Printf("Error writing to clipboard: %v\n", err)
+				return
+			}
+			lastClipboard = clipboardHistory[index]
+			fmt.Printf("Pasted item %d from history\n", index+1)
 		}
 	}
 }
