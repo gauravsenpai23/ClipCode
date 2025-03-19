@@ -56,15 +56,16 @@ func monitorClipboard() {
 		}
 
 		time.Sleep(pollInterval)
+		
 	}
 }
 
 func registerHotkeys() {
-	fmt.Println("--- Press Ctrl+Shift+1-9 to paste from history ---")
+	fmt.Println("--- Press Shift+alt+1-9 to paste from history ---")
 
 	for i := 1; i <= 9; i++ {
 		key := fmt.Sprintf("%d", i)
-		hook.Register(hook.KeyDown, []string{key, "ctrl", "shift"}, func(e hook.Event) {
+		hook.Register(hook.KeyDown, []string{key, "shift", "alt"}, func(e hook.Event) {
 			keyStr := string(e.Rawcode)
 			pasteFromHistory(keyStr)
 		})

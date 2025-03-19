@@ -5,14 +5,14 @@ A lightweight clipboard manager written in Go that maintains a history of your c
 ## Features
 
 - Maintains a history of up to 100 recent clipboard entries
-- Quick access to historical entries using Ctrl+Shift+1 through Ctrl+Shift+9
+- Quick access to historical entries using Alt+Shift+1 through Alt+Shift+9
 - Real-time clipboard monitoring
 - Graceful shutdown support
 
 ## Prerequisites
 
 - Go 1.16 or higher
-- Windows/macOS/Linux operating system
+- Windows
 
 ## Installation
 
@@ -40,9 +40,9 @@ go run main.go
 
 - Copy any text as you normally would
 - Access previous clipboard entries using the following hotkeys:
-  - Ctrl+Shift+1: Paste the most recent clipboard entry
-  - Ctrl+Shift+2: Paste the second most recent entry
-  - And so on up to Ctrl+Shift+9
+  - Alt+Shift+1: Paste the most recent clipboard entry
+  - Alt+Shift+2: Paste the second most recent entry
+  - And so on up to Alt+Shift+9
 
 ## Exit
 
